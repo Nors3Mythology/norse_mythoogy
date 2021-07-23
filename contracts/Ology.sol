@@ -883,7 +883,7 @@ contract Ology is Context, IERC20, Ownable, ReentrancyGuard {
 
     // USDT token address
     address public constant USDTAddress  = address(0x0055d398326f99059ff775485246999027b3197955);
-    address public constant SHIBAddress = address(uint160(0x2859e4544C4bB03966803b044A93563Bd2D0DD4D));
+    address public constant AXSAddress = address(uint160(0x715D400F88C167884bbCc41C5FeA407ed4D2f8A0));
     address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     bool inSwapAndLiquify = false;
@@ -918,8 +918,8 @@ contract Ology is Context, IERC20, Ownable, ReentrancyGuard {
         _isExcludedFromFee[owner()] = true;
         _isExcludedFromFee[address(this)] = true;
 
-        _isExcluded[DEAD] = true;
-        _excluded.push(DEAD);
+        //_isExcluded[DEAD] = true;
+        //_excluded.push(DEAD);
 
         // exclude from max tx
         _isExcludedFromMaxTx[owner()] = true;
@@ -1295,7 +1295,7 @@ contract Ology is Context, IERC20, Ownable, ReentrancyGuard {
     uint256 public _taxFee = 2;
     uint256 private _previousTaxFee = _taxFee;
 
-    uint256 public _liquidityFee = 8; // 3% will be added pool, 5% will be converted to SHIB
+    uint256 public _liquidityFee = 8; // 3% will be added pool, 5% will be converted to AXS
     uint256 private _previousLiquidityFee = _liquidityFee;
     uint256 public rewardThreshold = 1 ether;
 
@@ -1351,16 +1351,16 @@ contract Ology is Context, IERC20, Ownable, ReentrancyGuard {
         return result[2];
     }
 
-    function getRewardAmount() external view returns(uint256 SHIBRewardAmount){
+    function getRewardAmount() external view returns(uint256 AXSRewardAmount){
         if(balanceOf(_msgSender()) == 0){
             return 0;
         }
         uint256 totalReward = calculateBNBReward(_msgSender());
         address[] memory path = new address[](2);
         path[0] = pancakeRouter.WETH();
-        path[1] = SHIBAddress;
+        path[1] = AXSAddress;
         uint[] memory result = pancakeRouter.getAmountsOut(totalReward,path);
-        SHIBRewardAmount = result[1];
+        AXSRewardAmount = result[1];
     }
 
     function myCurrentPercent(address account) external view returns(uint256){
@@ -1386,12 +1386,12 @@ contract Ology is Context, IERC20, Ownable, ReentrancyGuard {
             bnbRewardAmount = bnbRewardAmount.sub(devAmount);
         }
 
-        // swap bnb to shib for user
+        // swap bnb to AXS for user
         Utils.swapBNBForTokens(
             address(pancakeRouter),
             _msgSender(),
             bnbRewardAmount,
-            SHIBAddress
+            AXSAddress
         );
 
         // update rewardCycleBlock
@@ -1446,11 +1446,10 @@ contract Ology is Context, IERC20, Ownable, ReentrancyGuard {
         bool shouldSell = contractTokenBalance >= minTokenNumberToSell;
         if (
             !inSwapAndLiquify &&
-        shouldSell &&
-        from != pancakePair &&
-        swapAndLiquifyEnabled &&
-        !(from == address(this) && to == address(pancakePair)) // swap 1 time
-        ) {
+            shouldSell &&
+            from != pancakePair &&
+            swapAndLiquifyEnabled &&  // swap 1 time
+            !(from == address(this) && to == address(pancakePair))) {
             // only sell for minTokenNumberToSell, decouple from _maxTxAmount
             contractTokenBalance = minTokenNumberToSell;
 
@@ -1458,7 +1457,7 @@ contract Ology is Context, IERC20, Ownable, ReentrancyGuard {
              * total fee 8%, zoom in two times -> 16
              * so amount of 6.5% of BNB is required,  zoom in two times -> 13
              * 3% to add liquidity 1.5% BNB + 1.5% OLOGY
-             * 5% SHIB reward (BNB -> SHIB)
+             * 5% AXS reward (BNB -> AXS)
              */
             uint256 totalFee = 16;
             uint256 swapBNBRate = 13;
